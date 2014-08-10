@@ -9,3 +9,7 @@ Included in this repo is a sample SRT subtitle file from a BBC 1 DVB-T transmiss
 
 1. Release DVB bitmap subtitle extractor using [Tesseract](https://code.google.com/p/tesseract-ocr/).
 2. Develop a command-line interface to output SRT files from a DVB transport stream.
+
+## Usage
+
+`ruby srt_keyword_extract.rb bbc1.srt`

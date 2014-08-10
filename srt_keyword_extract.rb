@@ -1,5 +1,8 @@
 #!/usr/bin/env ruby
 
+# SRT Keyword Extractor, counts word occurrances excluding common stop-words
+# Author: Ross Wilson (@rosswilson on GitHub)
+
 # Check correct arguments are passed
 if ARGV.length == 0
   puts "ERROR: You need to pass an SRT file as an argument. Exiting."
@@ -9,67 +12,43 @@ end
 # Open the SRT file for reading
 srt = File.open(ARGV[0], "r")
 
-h = Hash.new
+word_hash = Hash.new
 
-common = {}
-%w{ a able about above abst accordance according accordingly across act actually added adj
-  affected affecting affects after afterwards again against ah all almost alone along already
-  also although always am among amongst an and announce another any anybody anyhow anymore
-  anyone anything anyway anyways anywhere apparently approximately are aren arent arise around as
-  aside ask asking at auth available away awfully b back be became because become becomes becoming
-  been before beforehand begin beginning beginnings begins behind being believe below beside besides
-  between beyond biol both brief briefly but by c ca came can cannot can't cause causes certain
-  certainly co com come comes contain containing contains could couldnt d date did didn't different
-  do does doesn't doing done don't down downwards due during e each ed edu effect eg eight eighty
-  either else elsewhere end ending enough especially et et-al etc even ever every everybody everyone
-  everything everywhere ex except f far few ff fifth first five fix followed following follows
-  for former formerly forth found four from further furthermore g gave get gets getting give given
-  gives giving go goes gone got gotten h had happens hardly has hasn't have haven't having he hed
-  hence her here hereafter hereby herein heres hereupon hers herself hes hi hid him himself his hither
-  home how howbeit however hundred i id ie if i'll im immediate immediately importance important in inc
-  indeed index information instead into invention inward is isn't it itd it'll its itself i've j just
-  k keep	keeps kept kg km know known knows l largely last lately later latter latterly least less
-  lest let lets like liked likely line little 'll look looking looks ltd m made mainly make makes many
-  may maybe me mean means meantime meanwhile merely mg might million miss ml more moreover most mostly
-  mr mrs much mug must my myself n na name namely nay nd near nearly necessarily necessary need needs
-  neither never nevertheless new next nine ninety no nobody non none nonetheless noone nor normally nos
-  not noted nothing now nowhere o obtain obtained obviously of off often oh ok okay old omitted on once
-  one ones only onto or ord other others otherwise ought our ours ourselves out outside over overall owing
-  own p page pages part particular particularly past per perhaps placed please plus poorly possible
-  possibly potentially pp predominantly present previously primarily probably promptly proud provides
-  put q que quickly quite qv r ran rather rd re readily really recent recently ref refs regarding
-  regardless regards related relatively research respectively resulted resulting results right run s
-  said same saw say saying says sec section see seeing seem seemed seeming seems seen self selves sent
-  seven several shall she shed she'll shes should shouldn't show showed shown showns shows significant
-  significantly similar similarly since six slightly so some somebody somehow someone somethan
-  something sometime sometimes somewhat somewhere soon sorry specifically specified specify specifying
-  still stop strongly sub substantially successfully such sufficiently suggest sup sure }.each{|w| common[w] = true}
+stop_words = %w(a able about across after all almost also am among an and any are as at be because been but by can cannot could dear did do does either else ever every for from get got had has have he her hers him his how however i if in into is it its just least let like likely may me might most must my neither no nor not of off often on only or other our own rather said say says she should since so some than that the their them then there these they this tis to too twas us wants was we were what when where which while who whom why will with would yet you your)
 
 srt.each_line do |line|
-  line.chomp!
-
-  # Skip the number lines, the timestamp lines, and any empty lines
+  # Skip number lines, timestamp lines, and any empty lines
   next if line =~ /^\d+$/ || line =~ /-->/ || line.empty?
 
-  # Remove elipsis
+  # Remove elipsises
   line.gsub! /\.../, ''
 
-  line.gsub!(/\b\w+\b/) { |word| common[word.downcase] ? '' : word}.squeeze(' ')
+  # Split on spaces
+  words = line.downcase.split
 
-  words = line.split " "
+  # Remove stop-words, TODO: Implement stemming to remove common word suffixes
+  words.reject! do |word|
+    stop_words.include?(word)
+  end
 
+  # Only select whole words, rejecting symbols
+  words.select! do |word|
+    word =~ /^[a-z]+$/
+  end
+
+  # Build a hash of word -> word frequency count
   words.each do |word|
-
-    if h.has_key?(word)
-      h[word] = h[word] + 1
+    if word_hash.has_key?(word)
+      word_hash[word] += 1
     else
-      h[word] = 1
+      word_hash[word] = 1
     end
   end
 end
 
-h.sort{|a,b| a[1]<=>b[1]}.each { |elem|
-  puts "\"#{elem[0]}\" has #{elem[1]} occurrences"
-}
-
 srt.close
+
+# Output sorted list of words and associated word frequency
+word_hash.sort_by { |k, v| v }.each do |word, frequency|
+  puts "\"#{word}\" has #{frequency} occurrences"
+end
